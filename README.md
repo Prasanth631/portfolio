@@ -1,16 +1,75 @@
-# React + Vite
+# Prasanth Golla - Portfolio
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A cinematic "Luminous Dark" personal portfolio website built with React, Vite, and Tailwind CSS. This project features high-end visual effects including a flashlight cursor, spotlight project cards, and noise grain overlays to create an immersive user experience.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Luminous Dark Theme**: A dark, cinematic aesthetic with a virtual flashlight cursor that reveals content.
+- **Spotlight Interactions**: Cards and elements light up their borders based on mouse proximity.
+- **Responsive Design**: Fully optimized for mobile, tablet, and desktop screens.
+- **Animation**: Smooth page transitions and element reveals using Framer Motion.
+- **Resume Integration**: One-click PDF download and comprehensive display of education, skills, and certifications.
+- **Contact Form**: Functional contact form integrated with Web3Forms for direct email delivery.
 
-## React Compiler
+## Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Framework**: React 18
+- **Build Tool**: Vite
+- **Styling**: Tailwind CSS
+- **Animation**: Framer Motion
+- **Deployment**: GitHub Pages / Vercel
 
-## Expanding the ESLint configuration
+## Getting Started
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### Prerequisites
+
+Ensure you have Node.js installed on your machine.
+
+### Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/Prasanth631/portfolio.git
+   ```
+
+2. Navigate to the project directory:
+   ```bash
+   cd portfolio
+   ```
+
+3. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+4. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+## Deployment
+
+### GitHub Pages
+
+This project is configured to deploy to GitHub Pages.
+
+1. Run the deploy script:
+   ```bash
+   npm run deploy
+   ```
+   This command builds the project and pushes the `dist` folder to the `gh-pages` branch.
+
+### Vercel / Netlify
+
+The project is also compatible with Vercel and Netlify. Simply connect your repository, and it will automatically detect the settings. The build command is `npm run build` and the output directory is `dist`.
+
+## Project Structure
+
+- `src/components`: React components (LuminousDark, Flashlight, SpotlightCard).
+- `src/data`: Structured data for the portfolio (resume content).
+- `src/index.css`: Global styles and Tailwind configuration.
+- `public`: Static assets like the resume PDF and favicon.
+
+## License
+
+This project is open source and available for personal and educational use.
