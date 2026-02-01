@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { motion, useMotionValue, useSpring } from 'framer-motion';
 
 const Flashlight = () => {
@@ -27,7 +27,19 @@ const Flashlight = () => {
         };
     }, []);
 
-    if (typeof window !== 'undefined' && window.innerWidth < 768) return null;
+    const [isVisible, setIsVisible] = useState(false);
+
+    useEffect(() => {
+        const checkVisibility = () => {
+            setIsVisible(typeof window !== 'undefined' && window.innerWidth >= 768);
+        };
+
+        checkVisibility();
+        window.addEventListener('resize', checkVisibility);
+        return () => window.removeEventListener('resize', checkVisibility);
+    }, []);
+
+    if (!isVisible) return null;
 
     return (
         <motion.div
