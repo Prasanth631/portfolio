@@ -14,6 +14,8 @@ const stagger = {
     animate: { transition: { staggerChildren: 0.1 } }
 };
 
+console.log("Portfolio Version: Luminous Dark - Build " + new Date().toISOString());
+
 const Nav = () => (
     <nav className="nav">
         <div className="container nav-inner">
