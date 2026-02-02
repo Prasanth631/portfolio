@@ -107,5 +107,5 @@ export const portfolioData = {
     ],
 
     // Resume download
-    resumeUrl: "/resume.pdf"
+    resumeUrl: "https://drive.usercontent.google.com/download?id=1Et3Vxm47N2aYGxMeNCcHkvxHco6rWgkR&export=download&authuser=1&confirm=t&uuid=970ef30f-beb4-42ac-8bb0-46ed33296182&at=APcXIO1SDokIxA6d255OyXj1hwTJ:1770007905019"
 };
