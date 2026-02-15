@@ -4,11 +4,27 @@ export const portfolioData = {
     name: "Venkata Prasanth Golla",
     shortName: "Prasanth",
     title: "Aspiring Software Engineer",
-    email: "prasanthgolla29@gmail.com",
+    tagline: "Building scalable applications with modern technologies",
+    email: "2200030631cseh@gmail.com",
     phone: "+91-8919974413",
     location: "Nidadavolu, Andhra Pradesh, India",
     github: "https://github.com/Prasanth631",
     linkedin: "https://www.linkedin.com/in/venkata-prasanth-golla-960220286/",
+
+    // Stats for animated counters
+    stats: [
+        { label: "CGPA", value: 9.21, suffix: "" },
+        { label: "Projects", value: 3, suffix: "+" },
+        { label: "Certifications", value: 2, suffix: "" },
+        { label: "Hackathons", value: 1, suffix: "" }
+    ],
+
+    // Social Links
+    socialLinks: [
+        { name: "GitHub", url: "https://github.com/Prasanth631", icon: "github" },
+        { name: "LinkedIn", url: "https://www.linkedin.com/in/venkata-prasanth-golla-960220286/", icon: "linkedin" },
+        { name: "Email", url: "mailto:2200030631cseh@gmail.com", icon: "mail" }
+    ],
 
     // Objective
     objective: "Aspiring Software Engineer with a strong foundation in full-stack development and core software engineering principles, eager to contribute to building, testing, and maintaining scalable applications while continuously learning new technologies and growing in a collaborative Agile environment.",

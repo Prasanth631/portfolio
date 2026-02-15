@@ -1,9 +1,14 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect, useRef } from 'react';
+import { motion, useScroll, useTransform, AnimatePresence, useInView } from 'framer-motion';
 import Flashlight from './Flashlight';
 import SpotlightCard from './SpotlightCard';
+import TiltCard from './TiltCard';
+import MagneticButton from './MagneticButton';
+import TextReveal from './TextReveal';
+import AnimatedCounter from './AnimatedCounter';
 import { portfolioData } from '../data/portfolioData';
 
+// ─── Animation Variants ────────────────────────
 const fadeIn = {
     initial: { opacity: 0, y: 30 },
     animate: { opacity: 1, y: 0 },
@@ -11,238 +16,454 @@ const fadeIn = {
 };
 
 const stagger = {
-    animate: { transition: { staggerChildren: 0.1 } }
+    animate: { transition: { staggerChildren: 0.12 } }
 };
 
-console.log("Portfolio Version: Luminous Dark - Build " + new Date().toISOString());
+const slideUp = {
+    initial: { opacity: 0, y: 60 },
+    whileInView: { opacity: 1, y: 0 },
+    viewport: { once: true, margin: '-80px' },
+    transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] }
+};
 
-const Nav = () => (
-    <nav className="nav">
-        <div className="container nav-inner">
-            <motion.a
-                href="#"
-                className="body-sm link-hover"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
-            >
-                {portfolioData.shortName}
-            </motion.a>
-            <motion.div
-                className="flex gap-8"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.6 }}
-            >
-                <a href="#about" className="body-sm link-hover dim-text">About</a>
-                <a href="#work" className="body-sm link-hover dim-text">Work</a>
-                <a href="#skills" className="body-sm link-hover dim-text">Skills</a>
-                <a href="#contact" className="body-sm link-hover dim-text">Contact</a>
-            </motion.div>
-        </div>
-    </nav>
+// ─── Typing Effect Hook ────────────────────────
+const useTypingEffect = (words, speed = 100, pause = 2000) => {
+    const [displayText, setDisplayText] = useState('');
+    const [wordIndex, setWordIndex] = useState(0);
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    useEffect(() => {
+        const currentWord = words[wordIndex];
+        let timeout;
+
+        if (!isDeleting && displayText === currentWord) {
+            timeout = setTimeout(() => setIsDeleting(true), pause);
+        } else if (isDeleting && displayText === '') {
+            setIsDeleting(false);
+            setWordIndex((prev) => (prev + 1) % words.length);
+        } else {
+            timeout = setTimeout(() => {
+                setDisplayText(
+                    isDeleting
+                        ? currentWord.substring(0, displayText.length - 1)
+                        : currentWord.substring(0, displayText.length + 1)
+                );
+            }, isDeleting ? speed / 2 : speed);
+        }
+
+        return () => clearTimeout(timeout);
+    }, [displayText, isDeleting, wordIndex, words, speed, pause]);
+
+    return displayText;
+};
+
+// ─── Floating Gradient Orbs ─────────────────────
+const GradientOrbs = () => (
+    <div className="gradient-orbs">
+        <div className="orb orb-1" />
+        <div className="orb orb-2" />
+        <div className="orb orb-3" />
+    </div>
 );
 
-const Hero = () => (
-    <section className="section pt-32 md:pt-0">
-        <div className="container">
-            <motion.div variants={stagger} initial="initial" animate="animate">
-                <motion.p className="body-sm mb-4 md:mb-8" variants={fadeIn}>
-                    {portfolioData.title}
-                </motion.p>
-                <motion.h1 className="display-xl mb-4 md:mb-8" variants={fadeIn}>
-                    {portfolioData.name}
-                </motion.h1>
-                <motion.p className="body-lg max-w-2xl dim-text mb-4" variants={fadeIn}>
-                    {portfolioData.objective}
-                </motion.p>
-                <motion.div className="flex flex-col md:flex-row flex-wrap gap-3 md:gap-4 mt-8 md:mt-12" variants={fadeIn}>
-                    <a
-                        href={portfolioData.resumeUrl}
-                        download="Prasanth_Golla_Resume.pdf"
-                        className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white text-black text-sm font-medium tracking-wide hover:bg-white/90 transition-colors"
-                    >
-                        <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
-                        </svg>
-                        Download Resume
-                    </a>
-                    <a href="#work" className="body-sm link-hover px-6 py-3 border border-white/20 hover:border-white/40 transition-colors text-center">
-                        View Work →
-                    </a>
-                    <a href={portfolioData.github} target="_blank" className="body-sm link-hover dim-text px-6 py-3 text-center">
-                        GitHub
-                    </a>
+// ─── Scroll Progress Bar ────────────────────────
+const ScrollProgress = () => {
+    const { scrollYProgress } = useScroll();
+    return (
+        <motion.div
+            className="scroll-progress"
+            style={{ scaleX: scrollYProgress }}
+        />
+    );
+};
+
+// ─── Navigation ─────────────────────────────────
+const Nav = () => {
+    const [isScrolled, setIsScrolled] = useState(false);
+    const [activeSection, setActiveSection] = useState('');
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+    const navLinks = [
+        { label: 'About', href: '#about' },
+        { label: 'Work', href: '#work' },
+        { label: 'Skills', href: '#skills' },
+        { label: 'Contact', href: '#contact' }
+    ];
+
+    useEffect(() => {
+        const handleScroll = () => {
+            setIsScrolled(window.scrollY > 50);
+
+            const sections = ['contact', 'skills', 'work', 'about'];
+            for (const id of sections) {
+                const el = document.getElementById(id);
+                if (el) {
+                    const rect = el.getBoundingClientRect();
+                    if (rect.top <= 200) {
+                        setActiveSection(id);
+                        break;
+                    }
+                }
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    return (
+        <nav className={`nav ${isScrolled ? 'nav-scrolled' : ''}`}>
+            <ScrollProgress />
+            <div className="container nav-inner">
+                <motion.a
+                    href="#"
+                    className="nav-logo"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.3 }}
+                >
+                    {portfolioData.shortName}
+                </motion.a>
+
+                {/* Desktop Nav */}
+                <motion.div
+                    className="nav-links"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.5 }}
+                >
+                    {navLinks.map((link) => (
+                        <a
+                            key={link.href}
+                            href={link.href}
+                            className={`nav-link ${activeSection === link.href.slice(1) ? 'nav-link-active' : ''}`}
+                        >
+                            {link.label}
+                            {activeSection === link.href.slice(1) && (
+                                <motion.span
+                                    className="nav-indicator"
+                                    layoutId="nav-indicator"
+                                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                                />
+                            )}
+                        </a>
+                    ))}
                 </motion.div>
+
+                {/* Mobile Hamburger */}
+                <button
+                    className="hamburger"
+                    onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                    aria-label="Toggle menu"
+                >
+                    <span className={`hamburger-line ${mobileMenuOpen ? 'open' : ''}`} />
+                    <span className={`hamburger-line ${mobileMenuOpen ? 'open' : ''}`} />
+                    <span className={`hamburger-line ${mobileMenuOpen ? 'open' : ''}`} />
+                </button>
+            </div>
+
+            {/* Mobile Menu */}
+            <AnimatePresence>
+                {mobileMenuOpen && (
+                    <motion.div
+                        className="mobile-menu"
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.3 }}
+                    >
+                        {navLinks.map((link, i) => (
+                            <motion.a
+                                key={link.href}
+                                href={link.href}
+                                className="mobile-menu-link"
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: i * 0.1 }}
+                                onClick={() => setMobileMenuOpen(false)}
+                            >
+                                {link.label}
+                            </motion.a>
+                        ))}
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </nav>
+    );
+};
+
+// ─── Hero Section ───────────────────────────────
+const Hero = () => {
+    const typedText = useTypingEffect(
+        ['Software Engineer', 'Full-Stack Developer', 'Problem Solver'],
+        80,
+        2500
+    );
+
+    return (
+        <section className="section hero-section">
+            <GradientOrbs />
+            <div className="container hero-container">
+                <motion.div variants={stagger} initial="initial" animate="animate">
+                    <motion.div className="hero-badge" variants={fadeIn}>
+                        <span className="hero-badge-dot" />
+                        Open to opportunities
+                    </motion.div>
+
+                    <motion.h1 className="hero-name" variants={fadeIn}>
+                        {portfolioData.name}
+                    </motion.h1>
+
+                    <motion.div className="hero-typed" variants={fadeIn}>
+                        <span className="hero-typed-prefix">I'm a </span>
+                        <span className="hero-typed-text">{typedText}</span>
+                        <span className="hero-cursor">|</span>
+                    </motion.div>
+
+                    <motion.p className="hero-description" variants={fadeIn}>
+                        {portfolioData.objective}
+                    </motion.p>
+
+                    {/* Stats Bar */}
+                    <motion.div className="hero-stats" variants={fadeIn}>
+                        {portfolioData.stats.map((stat, i) => (
+                            <div key={i} className="hero-stat">
+                                <AnimatedCounter
+                                    target={stat.value}
+                                    suffix={stat.suffix}
+                                    className="hero-stat-value"
+                                    duration={1.5}
+                                />
+                                <span className="hero-stat-label">{stat.label}</span>
+                            </div>
+                        ))}
+                    </motion.div>
+
+                    {/* CTA Buttons */}
+                    <motion.div className="hero-actions" variants={fadeIn}>
+                        <MagneticButton
+                            as="a"
+                            href={portfolioData.resumeUrl}
+                            download="Prasanth_Golla_Resume.pdf"
+                            className="btn btn-primary"
+                        >
+                            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                            </svg>
+                            Download Resume
+                        </MagneticButton>
+                        <MagneticButton as="a" href="#work" className="btn btn-outline">
+                            View Work
+                            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                <path d="M5 12h14M12 5l7 7-7 7" />
+                            </svg>
+                        </MagneticButton>
+                    </motion.div>
+                </motion.div>
+            </div>
+
+            {/* Scroll Indicator */}
+            <motion.div
+                className="scroll-indicator"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 2 }}
+            >
+                <motion.div
+                    className="scroll-indicator-line"
+                    animate={{ y: [0, 12, 0] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                />
+                <span>Scroll</span>
             </motion.div>
-        </div>
-    </section>
-);
+        </section>
+    );
+};
 
+// ─── About Section ──────────────────────────────
 const About = () => (
-    <section id="about" className="py-24">
+    <section id="about" className="py-32">
         <div className="container">
-            <div className="grid md:grid-cols-2 gap-16">
-                <div>
-                    <p className="body-sm mb-8">About</p>
-                    <h2 className="display-md mb-8 text-white">
-                        Full-Stack Developer focused on building scalable applications
-                    </h2>
-                </div>
-                <div>
-                    <p className="body-lg dim-text mb-8">{portfolioData.objective}</p>
+            <motion.div {...slideUp} className="section-header">
+                <span className="section-label">About</span>
+                <h2 className="section-title">
+                    <TextReveal>Full-Stack Developer focused on building scalable applications</TextReveal>
+                </h2>
+            </motion.div>
 
-                    {/* Education */}
-                    <div className="mt-12 space-y-6">
-                        <p className="body-sm">Education</p>
+            <div className="about-grid">
+                <motion.div {...slideUp} className="about-text">
+                    <p className="body-lg dim-text">{portfolioData.objective}</p>
+                </motion.div>
+
+                {/* Education Timeline */}
+                <motion.div {...slideUp} className="about-education">
+                    <span className="section-label">Education</span>
+                    <div className="timeline">
                         {portfolioData.education.map((edu, idx) => (
-                            <SpotlightCard key={idx} className="p-4">
-                                <div className="flex justify-between items-start mb-2">
-                                    <h4 className="text-white font-medium">{edu.institution}</h4>
-                                    <span className="body-sm">{edu.grade}</span>
-                                </div>
-                                <p className="dim-text text-sm">{edu.degree} {edu.field && `in ${edu.field}`}</p>
-                                <p className="body-sm mt-2">{edu.period}</p>
-                            </SpotlightCard>
+                            <motion.div
+                                key={idx}
+                                className="timeline-item"
+                                initial={{ opacity: 0, x: 20 }}
+                                whileInView={{ opacity: 1, x: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: idx * 0.2 }}
+                            >
+                                <div className="timeline-dot" />
+                                <SpotlightCard className="timeline-card">
+                                    <div className="timeline-card-header">
+                                        <h4>{edu.institution}</h4>
+                                        <span className="timeline-grade">{edu.grade}</span>
+                                    </div>
+                                    <p className="dim-text text-sm">{edu.degree} {edu.field && `in ${edu.field}`}</p>
+                                    <p className="body-sm mt-2">{edu.period}</p>
+                                </SpotlightCard>
+                            </motion.div>
                         ))}
                     </div>
-                </div>
+                </motion.div>
             </div>
         </div>
     </section>
 );
 
+// ─── Projects Section ───────────────────────────
 const Projects = () => (
-    <section id="work" className="py-24">
+    <section id="work" className="py-32">
         <div className="container">
-            <p className="body-sm mb-4">Selected Work</p>
-            <h2 className="display-md text-white mb-12">Projects & Hackathons</h2>
+            <motion.div {...slideUp} className="section-header">
+                <span className="section-label">Selected Work</span>
+                <h2 className="section-title">
+                    <TextReveal>Projects & Hackathons</TextReveal>
+                </h2>
+            </motion.div>
 
             {/* Hackathon Feature */}
-            <SpotlightCard className="mb-8 p-8">
-                <div className="flex flex-wrap justify-between items-start gap-4 mb-6">
-                    <div>
-                        <span className="inline-block px-3 py-1 bg-amber-500/20 text-amber-400 text-xs font-medium rounded mb-4">
-                            🏆 {portfolioData.hackathons[0].description}
-                        </span>
-                        <h3 className="display-md text-white">{portfolioData.hackathons[0].project}</h3>
-                        <p className="body-sm mt-2">{portfolioData.hackathons[0].name} • {portfolioData.hackathons[0].date}</p>
+            <motion.div {...slideUp}>
+                <TiltCard className="featured-project">
+                    <div className="featured-project-header">
+                        <div>
+                            <span className="featured-badge">
+                                <span className="featured-badge-pulse" />
+                                {portfolioData.hackathons[0].description}
+                            </span>
+                            <h3 className="featured-project-title">{portfolioData.hackathons[0].project}</h3>
+                            <p className="body-sm mt-2">{portfolioData.hackathons[0].name} &bull; {portfolioData.hackathons[0].date}</p>
+                        </div>
+                        <MagneticButton
+                            as="a"
+                            href={portfolioData.hackathons[0].github}
+                            target="_blank"
+                            className="btn btn-ghost"
+                        >
+                            Source Code
+                            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3" />
+                            </svg>
+                        </MagneticButton>
                     </div>
-                    <a
-                        href={portfolioData.hackathons[0].github}
-                        target="_blank"
-                        className="body-sm link-hover dim-text"
-                    >
-                        View Code →
-                    </a>
-                </div>
-                <ul className="space-y-3 mb-6">
-                    {portfolioData.hackathons[0].highlights.map((h, i) => (
-                        <li key={i} className="dim-text text-sm flex gap-3">
-                            <span className="text-white/40">→</span>
-                            {h}
-                        </li>
-                    ))}
-                </ul>
-                <div className="flex flex-wrap gap-2">
-                    {portfolioData.hackathons[0].tech.map((t, i) => (
-                        <span key={i} className="body-sm px-2 py-1 bg-white/5 rounded">{t}</span>
-                    ))}
-                </div>
-            </SpotlightCard>
+                    <ul className="featured-highlights">
+                        {portfolioData.hackathons[0].highlights.map((h, i) => (
+                            <motion.li
+                                key={i}
+                                initial={{ opacity: 0, x: -10 }}
+                                whileInView={{ opacity: 1, x: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: i * 0.1 }}
+                            >
+                                <span className="highlight-arrow">→</span>
+                                {h}
+                            </motion.li>
+                        ))}
+                    </ul>
+                    <div className="tech-stack">
+                        {portfolioData.hackathons[0].tech.map((t, i) => (
+                            <motion.span
+                                key={i}
+                                className="tech-pill"
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                whileInView={{ opacity: 1, scale: 1 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: i * 0.05 }}
+                            >
+                                {t}
+                            </motion.span>
+                        ))}
+                    </div>
+                </TiltCard>
+            </motion.div>
 
             {/* Regular Projects */}
-            <div className="project-grid">
+            <div className="project-grid mt-8">
                 {portfolioData.projects.map((project, idx) => (
-                    <SpotlightCard key={idx}>
-                        <div className="flex justify-between items-start mb-4">
-                            <span className="body-sm text-white/40">{String(idx + 1).padStart(2, '0')}</span>
-                            <a
+                    <TiltCard key={idx} className="project-card">
+                        <div className="project-card-top">
+                            <span className="project-number">{String(idx + 1).padStart(2, '0')}</span>
+                            <MagneticButton
+                                as="a"
                                 href={project.github}
                                 target="_blank"
-                                className="body-sm link-hover dim-text"
+                                className="btn btn-ghost btn-sm"
                             >
-                                GitHub →
-                            </a>
+                                GitHub
+                                <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3" />
+                                </svg>
+                            </MagneticButton>
                         </div>
-                        <h3 className="display-md text-white mb-4">{project.name}</h3>
-                        <ul className="space-y-2 mb-6">
+                        <h3 className="project-card-title">{project.name}</h3>
+                        <ul className="project-highlights">
                             {project.highlights.map((h, i) => (
-                                <li key={i} className="dim-text text-sm flex gap-2">
-                                    <span className="text-white/40 shrink-0">•</span>
+                                <li key={i}>
+                                    <span className="highlight-dot" />
                                     <span>{h}</span>
                                 </li>
                             ))}
                         </ul>
-                        <div className="flex flex-wrap gap-2 mt-auto">
+                        <div className="tech-stack mt-auto">
                             {project.tech.map((t, i) => (
-                                <span key={i} className="body-sm">{t}</span>
+                                <span key={i} className="tech-pill tech-pill-sm">{t}</span>
                             ))}
                         </div>
-                    </SpotlightCard>
+                    </TiltCard>
                 ))}
             </div>
         </div>
     </section>
 );
 
+// ─── Skills Section ─────────────────────────────
 const Skills = () => (
-    <section id="skills" className="py-24">
+    <section id="skills" className="py-32">
         <div className="container">
-            <p className="body-sm mb-4">Expertise</p>
-            <h2 className="display-md text-white mb-12">Technical Skills</h2>
+            <motion.div {...slideUp} className="section-header">
+                <span className="section-label">Expertise</span>
+                <h2 className="section-title">
+                    <TextReveal>Technical Skills</TextReveal>
+                </h2>
+            </motion.div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {Object.entries(portfolioData.skills).map(([category, items]) => (
-                    <SpotlightCard key={category}>
-                        <p className="body-sm mb-6 text-white">{category}</p>
-                        <ul className="space-y-2">
+            <div className="skills-bento">
+                {Object.entries(portfolioData.skills).map(([category, items], catIdx) => (
+                    <SpotlightCard
+                        key={category}
+                        className={`skills-card ${catIdx === 0 ? 'skills-card-lg' : ''}`}
+                    >
+                        <p className="skills-category">{category}</p>
+                        <div className="skills-pills">
                             {items.map((skill, i) => (
-                                <li key={i} className="dim-text text-sm flex items-center gap-2">
-                                    <span className="w-1 h-1 bg-white/40 rounded-full"></span>
+                                <motion.span
+                                    key={i}
+                                    className="skill-pill"
+                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    whileInView={{ opacity: 1, scale: 1 }}
+                                    viewport={{ once: true }}
+                                    transition={{ delay: i * 0.06, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                                    whileHover={{ scale: 1.08 }}
+                                >
                                     {skill}
-                                </li>
+                                </motion.span>
                             ))}
-                        </ul>
-                    </SpotlightCard>
-                ))}
-            </div>
-        </div>
-    </section>
-);
-
-const Certifications = () => (
-    <section className="py-24">
-        <div className="container">
-            <p className="body-sm mb-4">Credentials</p>
-            <h2 className="display-md text-white mb-12">Certifications</h2>
-
-            <div className="grid md:grid-cols-2 gap-6">
-                {portfolioData.certifications.map((cert, idx) => (
-                    <SpotlightCard key={idx}>
-                        <div className="flex items-start gap-4">
-                            <div
-                                className="w-12 h-12 rounded-lg flex items-center justify-center text-sm font-bold shrink-0"
-                                style={{
-                                    background: cert.issuer.includes('AWS')
-                                        ? 'linear-gradient(135deg, #ff9900, #ffb84d)'
-                                        : 'linear-gradient(135deg, #ee0000, #ff4444)',
-                                    color: 'white'
-                                }}
-                            >
-                                {cert.issuer.includes('AWS') ? 'AWS' : 'RH'}
-                            </div>
-                            <div className="flex-1">
-                                <h4 className="text-white font-medium mb-1">{cert.name}</h4>
-                                <p className="body-sm">{cert.issuer} • {cert.year}</p>
-                            </div>
-                            <a
-                                href={cert.link}
-                                target="_blank"
-                                className="body-sm link-hover dim-text shrink-0"
-                            >
-                                Verify →
-                            </a>
                         </div>
                     </SpotlightCard>
                 ))}
@@ -251,9 +472,70 @@ const Certifications = () => (
     </section>
 );
 
+// ─── Certifications Section ─────────────────────
+const Certifications = () => (
+    <section className="py-32">
+        <div className="container">
+            <motion.div {...slideUp} className="section-header">
+                <span className="section-label">Credentials</span>
+                <h2 className="section-title">
+                    <TextReveal>Certifications</TextReveal>
+                </h2>
+            </motion.div>
+
+            <div className="cert-grid">
+                {portfolioData.certifications.map((cert, idx) => (
+                    <motion.div
+                        key={idx}
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: idx * 0.15 }}
+                    >
+                        <SpotlightCard className="cert-card">
+                            <div className="cert-card-inner">
+                                <div
+                                    className="cert-icon"
+                                    style={{
+                                        background: cert.issuer.includes('AWS')
+                                            ? 'linear-gradient(135deg, #ff9900, #ffb84d)'
+                                            : 'linear-gradient(135deg, #ee0000, #ff4444)'
+                                    }}
+                                >
+                                    {cert.issuer.includes('AWS') ? 'AWS' : 'RH'}
+                                </div>
+                                <div className="cert-info">
+                                    <h4>{cert.name}</h4>
+                                    <p>{cert.issuer} &bull; {cert.year}</p>
+                                    <p className="cert-credential">ID: {cert.credentialId.slice(0, 8)}...</p>
+                                </div>
+                                <MagneticButton
+                                    as="a"
+                                    href={cert.link}
+                                    target="_blank"
+                                    className="btn btn-ghost btn-sm"
+                                >
+                                    Verify
+                                    <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                                        <path d="M22 4L12 14.01l-3-3" />
+                                    </svg>
+                                </MagneticButton>
+                            </div>
+                            <div className="cert-shimmer" />
+                        </SpotlightCard>
+                    </motion.div>
+                ))}
+            </div>
+        </div>
+    </section>
+);
+
+// ─── Contact Section ────────────────────────────
 const Contact = () => {
     const [formData, setFormData] = useState({ name: '', email: '', message: '' });
-    const [status, setStatus] = useState('idle'); // idle, sending, success, error
+    const [status, setStatus] = useState('idle');
+    const [focused, setFocused] = useState({});
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -264,7 +546,7 @@ const Contact = () => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    access_key: 'YOUR_WEB3FORMS_ACCESS_KEY', // Replace with your key
+                    access_key: 'YOUR_WEB3FORMS_ACCESS_KEY',
                     name: formData.name,
                     email: formData.email,
                     message: formData.message,
@@ -287,142 +569,188 @@ const Contact = () => {
         }
     };
 
+    const FloatingInput = ({ label, name, type = 'text', ...props }) => (
+        <div className="floating-field">
+            <input
+                type={type}
+                required
+                value={formData[name]}
+                onChange={(e) => setFormData({ ...formData, [name]: e.target.value })}
+                onFocus={() => setFocused({ ...focused, [name]: true })}
+                onBlur={() => setFocused({ ...focused, [name]: false })}
+                className="floating-input"
+                placeholder=" "
+                disabled={status === 'sending'}
+                {...props}
+            />
+            <label className="floating-label">{label}</label>
+        </div>
+    );
+
     return (
-        <section id="contact" className="py-24">
+        <section id="contact" className="py-32">
             <div className="container">
-                <div className="grid md:grid-cols-2 gap-16">
-                    <div>
-                        <p className="body-sm mb-4">Get in Touch</p>
-                        <h2 className="display-lg text-white mb-8">Let's work together</h2>
-                        <p className="body-lg dim-text mb-12">
-                            Currently open to new opportunities. Feel free to reach out for collaborations or just a friendly chat.
-                        </p>
+                <motion.div {...slideUp} className="section-header section-header-center">
+                    <span className="section-label">Get in Touch</span>
+                    <h2 className="section-title">
+                        <TextReveal>Let's work together</TextReveal>
+                    </h2>
+                    <p className="section-subtitle">
+                        Currently open to new opportunities. Feel free to reach out for collaborations or just a friendly chat.
+                    </p>
+                </motion.div>
 
-                        <div className="space-y-6">
-                            <div>
-                                <p className="body-sm mb-2">Email</p>
-                                <a href={`mailto:${portfolioData.email}`} className="text-white link-hover">
-                                    {portfolioData.email}
-                                </a>
-                            </div>
-                            <div>
-                                <p className="body-sm mb-2">Phone</p>
-                                <a href={`tel:${portfolioData.phone}`} className="text-white link-hover">
-                                    {portfolioData.phone}
-                                </a>
-                            </div>
-                            <div>
-                                <p className="body-sm mb-2">Location</p>
-                                <p className="text-white">{portfolioData.location}</p>
-                            </div>
+                <div className="contact-grid">
+                    {/* Contact Info */}
+                    <motion.div {...slideUp} className="contact-info">
+                        <div className="contact-cards">
+                            {[
+                                { label: 'Email', value: portfolioData.email, href: `mailto:${portfolioData.email}`, icon: 'M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2zM22 6l-10 7L2 6' },
+                                { label: 'Phone', value: portfolioData.phone, href: `tel:${portfolioData.phone}`, icon: 'M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z' },
+                                { label: 'Location', value: portfolioData.location, href: null, icon: 'M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0zM12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z' }
+                            ].map((item, i) => (
+                                <motion.div
+                                    key={i}
+                                    className="contact-card"
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ delay: i * 0.1 }}
+                                >
+                                    <div className="contact-card-icon">
+                                        <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                                            <path d={item.icon} />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p className="body-sm">{item.label}</p>
+                                        {item.href ? (
+                                            <a href={item.href} className="text-white link-hover">{item.value}</a>
+                                        ) : (
+                                            <p className="text-white">{item.value}</p>
+                                        )}
+                                    </div>
+                                </motion.div>
+                            ))}
                         </div>
 
-                        <div className="flex gap-6 mt-12">
-                            <a href={portfolioData.github} target="_blank" className="body-sm link-hover dim-text">GitHub</a>
-                            <a href={portfolioData.linkedin} target="_blank" className="body-sm link-hover dim-text">LinkedIn</a>
-                            <a href={`mailto:${portfolioData.email}`} className="body-sm link-hover dim-text">Email</a>
+                        {/* Social Links */}
+                        <div className="social-links">
+                            {portfolioData.socialLinks.map((link, i) => (
+                                <MagneticButton
+                                    key={i}
+                                    as="a"
+                                    href={link.url}
+                                    target={link.icon !== 'mail' ? '_blank' : undefined}
+                                    className="social-btn"
+                                >
+                                    {link.name}
+                                </MagneticButton>
+                            ))}
                         </div>
-                    </div>
+                    </motion.div>
 
-                    <div>
-                        <form onSubmit={handleSubmit} className="space-y-6">
-                            <div>
-                                <label className="body-sm block mb-2">Name</label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={formData.name}
-                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                    className="w-full bg-white/5 border border-white/10 px-4 py-3 text-white focus:border-white/30 focus:outline-none transition-colors"
-                                    placeholder="Your name"
+                    {/* Contact Form */}
+                    <motion.div {...slideUp}>
+                        <SpotlightCard className="contact-form-card">
+                            <form onSubmit={handleSubmit}>
+                                <FloatingInput label="Your Name" name="name" />
+                                <FloatingInput label="Email Address" name="email" type="email" />
+                                <div className="floating-field">
+                                    <textarea
+                                        rows="4"
+                                        required
+                                        value={formData.message}
+                                        onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                                        className="floating-input floating-textarea"
+                                        placeholder=" "
+                                        disabled={status === 'sending'}
+                                    />
+                                    <label className="floating-label">Your Message</label>
+                                </div>
+                                <MagneticButton
+                                    type="submit"
                                     disabled={status === 'sending'}
-                                />
-                            </div>
-                            <div>
-                                <label className="body-sm block mb-2">Email</label>
-                                <input
-                                    type="email"
-                                    required
-                                    value={formData.email}
-                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                    className="w-full bg-white/5 border border-white/10 px-4 py-3 text-white focus:border-white/30 focus:outline-none transition-colors"
-                                    placeholder="your@email.com"
-                                    disabled={status === 'sending'}
-                                />
-                            </div>
-                            <div>
-                                <label className="body-sm block mb-2">Message</label>
-                                <textarea
-                                    rows="5"
-                                    required
-                                    value={formData.message}
-                                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                                    className="w-full bg-white/5 border border-white/10 px-4 py-3 text-white focus:border-white/30 focus:outline-none transition-colors resize-none"
-                                    placeholder="Your message..."
-                                    disabled={status === 'sending'}
-                                />
-                            </div>
-                            <button
-                                type="submit"
-                                disabled={status === 'sending'}
-                                className="w-full bg-white text-black py-4 font-medium tracking-wide hover:bg-white/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                {status === 'sending' ? (
-                                    <>
-                                        <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                                        </svg>
-                                        Sending...
-                                    </>
-                                ) : (
-                                    <>
-                                        <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                                            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
-                                        </svg>
-                                        Send Message
-                                    </>
+                                    className="btn btn-primary btn-full"
+                                >
+                                    {status === 'sending' ? (
+                                        <>
+                                            <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                            </svg>
+                                            Sending...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                                <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
+                                            </svg>
+                                            Send Message
+                                        </>
+                                    )}
+                                </MagneticButton>
+
+                                {status === 'success' && (
+                                    <motion.p
+                                        className="form-status form-status-success"
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                    >
+                                        Message sent successfully!
+                                    </motion.p>
                                 )}
-                            </button>
-
-                            {status === 'success' && (
-                                <p className="text-center text-sm text-green-400 flex items-center justify-center gap-2">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                                        <path d="M22 4L12 14.01l-3-3" />
-                                    </svg>
-                                    Message sent successfully!
-                                </p>
-                            )}
-                            {status === 'error' && (
-                                <p className="text-center text-sm text-red-400">
-                                    Failed to send. Please try again or email directly.
-                                </p>
-                            )}
-                        </form>
-                    </div>
+                                {status === 'error' && (
+                                    <motion.p
+                                        className="form-status form-status-error"
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                    >
+                                        Failed to send. Please try again or email directly.
+                                    </motion.p>
+                                )}
+                            </form>
+                        </SpotlightCard>
+                    </motion.div>
                 </div>
             </div>
         </section>
     );
 };
 
-const Footer = () => (
-    <footer className="py-8 border-t border-white/5">
-        <div className="container">
-            <div className="flex flex-wrap justify-between items-center gap-4">
-                <p className="body-sm dim-text">
-                    © 2026 {portfolioData.name}
-                </p>
-                <div className="flex gap-6">
-                    <a href={portfolioData.github} target="_blank" className="body-sm link-hover dim-text">GitHub</a>
-                    <a href={portfolioData.linkedin} target="_blank" className="body-sm link-hover dim-text">LinkedIn</a>
+// ─── Footer ─────────────────────────────────────
+const Footer = () => {
+    const scrollToTop = () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    return (
+        <footer className="footer">
+            <div className="container">
+                <div className="footer-inner">
+                    <p className="footer-copyright">
+                        &copy; {new Date().getFullYear()} {portfolioData.name}
+                    </p>
+                    <div className="footer-links">
+                        {portfolioData.socialLinks.map((link, i) => (
+                            <a key={i} href={link.url} target={link.icon !== 'mail' ? '_blank' : undefined} className="footer-link">
+                                {link.name}
+                            </a>
+                        ))}
+                    </div>
+                    <MagneticButton className="btn-back-top" onClick={scrollToTop}>
+                        <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <path d="M18 15l-6-6-6 6" />
+                        </svg>
+                        Top
+                    </MagneticButton>
                 </div>
             </div>
-        </div>
-    </footer>
-);
+        </footer>
+    );
+};
 
+// ─── Main Component ─────────────────────────────
 const LuminousDark = () => (
     <div className="min-h-screen relative">
         <div className="noise-overlay" />
