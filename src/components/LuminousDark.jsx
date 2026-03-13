@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, useScroll, useTransform, AnimatePresence, useInView } from 'framer-motion';
 import Flashlight from './Flashlight';
+import Marquee from './Marquee';
 import SpotlightCard from './SpotlightCard';
 import TiltCard from './TiltCard';
 import MagneticButton from './MagneticButton';
@@ -77,6 +78,42 @@ const ScrollProgress = () => {
     );
 };
 
+// ─── Theme Toggle ───────────────────────────────
+const ThemeToggle = () => {
+    const [theme, setTheme] = useState('dark');
+
+    useEffect(() => {
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        setTheme(savedTheme);
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    }, []);
+
+    const toggleTheme = () => {
+        const newTheme = theme === 'dark' ? 'light' : 'dark';
+        setTheme(newTheme);
+        localStorage.setItem('theme', newTheme);
+        document.documentElement.setAttribute('data-theme', newTheme);
+    };
+
+    return (
+        <button
+            onClick={toggleTheme}
+            className="theme-toggle"
+            aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+        >
+            {theme === 'dark' ? (
+                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+            ) : (
+                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+            )}
+        </button>
+    );
+};
+
 // ─── Navigation ─────────────────────────────────
 const Nav = () => {
     const [isScrolled, setIsScrolled] = useState(false);
@@ -150,16 +187,20 @@ const Nav = () => {
                     ))}
                 </motion.div>
 
-                {/* Mobile Hamburger */}
-                <button
-                    className="hamburger"
-                    onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                    aria-label="Toggle menu"
-                >
-                    <span className={`hamburger-line ${mobileMenuOpen ? 'open' : ''}`} />
-                    <span className={`hamburger-line ${mobileMenuOpen ? 'open' : ''}`} />
-                    <span className={`hamburger-line ${mobileMenuOpen ? 'open' : ''}`} />
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <ThemeToggle />
+                    {/* Mobile Hamburger */}
+                    <button
+                        className="hamburger"
+                        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                        aria-label="Toggle menu"
+                        style={{ marginLeft: '1rem' }}
+                    >
+                        <span className={`hamburger-line ${mobileMenuOpen ? 'open' : ''}`} />
+                        <span className={`hamburger-line ${mobileMenuOpen ? 'open' : ''}`} />
+                        <span className={`hamburger-line ${mobileMenuOpen ? 'open' : ''}`} />
+                    </button>
+                </div>
             </div>
 
             {/* Mobile Menu */}
@@ -192,8 +233,74 @@ const Nav = () => {
     );
 };
 
+// ─── Resume Modal ───────────────────────────────
+const ResumeModal = ({ isOpen, onClose }) => (
+    <AnimatePresence>
+        {isOpen && (
+            <motion.div
+                className="resume-overlay"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={onClose}
+            >
+                <motion.div
+                    className="resume-modal"
+                    initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                    transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    {/* Modal Header */}
+                    <div className="resume-modal-header">
+                        <h3 className="resume-modal-title">Resume</h3>
+                        <div className="resume-modal-actions">
+                            <a
+                                href={portfolioData.resumeUrl}
+                                download="Prasanth_Golla_Resume.pdf"
+                                className="btn btn-sm btn-outline"
+                            >
+                                <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                                </svg>
+                                Download
+                            </a>
+                            <a
+                                href={portfolioData.resumeUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="btn btn-sm btn-outline"
+                            >
+                                <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3" />
+                                </svg>
+                                Open
+                            </a>
+                            <button className="resume-close-btn" onClick={onClose}>
+                                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                    <path d="M18 6L6 18M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    {/* PDF Embed */}
+                    <div className="resume-modal-body">
+                        <iframe
+                            src={portfolioData.resumeUrl}
+                            title="Resume"
+                            className="resume-iframe"
+                        />
+                    </div>
+                </motion.div>
+            </motion.div>
+        )}
+    </AnimatePresence>
+);
+
 // ─── Hero Section ───────────────────────────────
 const Hero = () => {
+    const [showResume, setShowResume] = useState(false);
     const typedText = useTypingEffect(
         ['Software Engineer', 'Full-Stack Developer', 'Problem Solver'],
         80,
@@ -239,26 +346,25 @@ const Hero = () => {
                         ))}
                     </motion.div>
 
-                    {/* CTA Buttons */}
                     <motion.div className="hero-actions" variants={fadeIn}>
-                        <MagneticButton
-                            as="a"
-                            href={portfolioData.resumeUrl}
-                            download="Prasanth_Golla_Resume.pdf"
+                        <button
+                            onClick={() => setShowResume(true)}
                             className="btn btn-primary"
                         >
                             <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                                <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2z" />
                             </svg>
-                            Download Resume
-                        </MagneticButton>
-                        <MagneticButton as="a" href="#work" className="btn btn-outline">
+                            View Resume
+                        </button>
+                        <a href="#work" className="btn btn-outline">
                             View Work
                             <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                 <path d="M5 12h14M12 5l7 7-7 7" />
                             </svg>
-                        </MagneticButton>
+                        </a>
                     </motion.div>
+
+                    <ResumeModal isOpen={showResume} onClose={() => setShowResume(false)} />
                 </motion.div>
             </div>
 
@@ -569,23 +675,7 @@ const Contact = () => {
         }
     };
 
-    const FloatingInput = ({ label, name, type = 'text', ...props }) => (
-        <div className="floating-field">
-            <input
-                type={type}
-                required
-                value={formData[name]}
-                onChange={(e) => setFormData({ ...formData, [name]: e.target.value })}
-                onFocus={() => setFocused({ ...focused, [name]: true })}
-                onBlur={() => setFocused({ ...focused, [name]: false })}
-                className="floating-input"
-                placeholder=" "
-                disabled={status === 'sending'}
-                {...props}
-            />
-            <label className="floating-label">{label}</label>
-        </div>
-    );
+
 
     return (
         <section id="contact" className="py-32">
@@ -637,25 +727,47 @@ const Contact = () => {
                         {/* Social Links */}
                         <div className="social-links">
                             {portfolioData.socialLinks.map((link, i) => (
-                                <MagneticButton
+                                <a
                                     key={i}
-                                    as="a"
                                     href={link.url}
                                     target={link.icon !== 'mail' ? '_blank' : undefined}
                                     className="social-btn"
                                 >
                                     {link.name}
-                                </MagneticButton>
+                                </a>
                             ))}
                         </div>
                     </motion.div>
 
                     {/* Contact Form */}
                     <motion.div {...slideUp}>
-                        <SpotlightCard className="contact-form-card">
+                        <div className="contact-form-card spotlight-card"
+                            style={{ padding: '2rem', position: 'relative' }}>
                             <form onSubmit={handleSubmit}>
-                                <FloatingInput label="Your Name" name="name" />
-                                <FloatingInput label="Email Address" name="email" type="email" />
+                                <div className="floating-field">
+                                    <input
+                                        type="text"
+                                        required
+                                        value={formData.name}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                                        className="floating-input"
+                                        placeholder=" "
+                                        disabled={status === 'sending'}
+                                    />
+                                    <label className="floating-label">Your Name</label>
+                                </div>
+                                <div className="floating-field">
+                                    <input
+                                        type="email"
+                                        required
+                                        value={formData.email}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                                        className="floating-input"
+                                        placeholder=" "
+                                        disabled={status === 'sending'}
+                                    />
+                                    <label className="floating-label">Email Address</label>
+                                </div>
                                 <div className="floating-field">
                                     <textarea
                                         rows="4"
@@ -668,7 +780,7 @@ const Contact = () => {
                                     />
                                     <label className="floating-label">Your Message</label>
                                 </div>
-                                <MagneticButton
+                                <button
                                     type="submit"
                                     disabled={status === 'sending'}
                                     className="btn btn-primary btn-full"
@@ -689,7 +801,7 @@ const Contact = () => {
                                             Send Message
                                         </>
                                     )}
-                                </MagneticButton>
+                                </button>
 
                                 {status === 'success' && (
                                     <motion.p
@@ -710,7 +822,7 @@ const Contact = () => {
                                     </motion.p>
                                 )}
                             </form>
-                        </SpotlightCard>
+                        </div>
                     </motion.div>
                 </div>
             </div>
@@ -738,12 +850,12 @@ const Footer = () => {
                             </a>
                         ))}
                     </div>
-                    <MagneticButton className="btn-back-top" onClick={scrollToTop}>
+                    <button className="btn-back-top" onClick={scrollToTop}>
                         <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                             <path d="M18 15l-6-6-6 6" />
                         </svg>
                         Top
-                    </MagneticButton>
+                    </button>
                 </div>
             </div>
         </footer>
@@ -758,6 +870,7 @@ const LuminousDark = () => (
         <Nav />
         <main>
             <Hero />
+            <Marquee />
             <About />
             <Projects />
             <Skills />

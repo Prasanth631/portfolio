@@ -44,7 +44,15 @@ export const portfolioData = {
             degree: "Intermediate Education",
             field: "",
             period: "June 2020 - April 2022",
-            grade: "9.37/10.0",
+            grade: "9.86/10.0",
+            gradeType: "CGPA"
+        },
+        {
+            institution: "Sasi EM High School, Nidadavolu",
+            degree: "SSC",
+            field: "",
+            period: "June 2019 - March 2020",
+            grade: "8.35/10.0",
             gradeType: "CGPA"
         }
     ],
