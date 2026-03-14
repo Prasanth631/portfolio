@@ -516,7 +516,8 @@
     border-radius: 16px;
     padding: 2rem;
     overflow: hidden;
-    transition: transform 0.4s var(--transition), background 0.3s ease;
+    box-shadow: 0 4px 20px -8px rgba(0, 0, 0, 0.4);
+    transition: transform 0.4s var(--transition), background 0.3s ease, box-shadow 0.4s ease;
   }
 
   .spotlight-card::before {
@@ -552,6 +553,8 @@
 
   .spotlight-card:hover {
     background: var(--bg-card-hover);
+    box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.7);
+    transform: translateY(-4px);
   }
 
   /* ─── Tilt Card ────────────────────── */
@@ -707,10 +710,11 @@
   }
 
   .section-title {
-    font-size: clamp(1.5rem, 3vw, 2.5rem);
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 5vw, 3.5rem);
     font-weight: 300;
-    letter-spacing: -0.01em;
-    line-height: 1.3;
+    letter-spacing: -0.03em;
+    line-height: 1.2;
     color: var(--fg);
   }
 
@@ -1430,15 +1434,94 @@
     padding: 0.25rem 0.5rem;
   }
 
-  /* ─── Skills Section ───────────────── */
-  .skills-bento {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1.25rem;
+  /* ─── Skill Visualizer (Circular Rings) ─── */
+  .skill-ring-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 0.5rem 1rem 0.5rem 0.5rem;
+    border-radius: 50px;
+    transition: background 0.3s ease, border-color 0.3s ease;
   }
 
-  .skills-card-lg {
-    grid-column: span 2;
+  .skill-ring-card:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .skill-ring-svg-container {
+    position: relative;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .skill-ring-svg-container svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+  }
+
+  .skill-ring-bg {
+    stroke: rgba(255, 255, 255, 0.08);
+  }
+
+  .skill-ring-fill {
+    stroke: var(--primary);
+    filter: drop-shadow(0 0 4px rgba(var(--primary-rgb, 100, 255, 218), 0.5));
+  }
+
+  .skill-ring-value {
+    font-size: 0.7rem;
+    font-weight: 600;
+    font-family: var(--font-display);
+  }
+
+  .skill-ring-name {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-base);
+  }
+
+  /* ─── Skills Section (SaaS Bento Grid) ─── */
+  .skills-bento {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+  }
+
+  .bento-col-span-1 { grid-column: span 1; }
+  .bento-col-span-2 { grid-column: span 2; }
+  .bento-col-span-3 { grid-column: span 3; }
+  .bento-col-span-4 { grid-column: span 4; }
+
+  .bento-row-span-1 { grid-row: span 1; }
+  .bento-row-span-2 { grid-row: span 2; }
+
+  /* On mobile, force everything to single column */
+  @media (max-width: 992px) {
+    .skills-bento {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .bento-col-span-1, .bento-col-span-2, .bento-col-span-3, .bento-col-span-4 {
+      grid-column: span 2 !important;
+      grid-row: span 1 !important;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .skills-bento {
+      grid-template-columns: 1fr;
+    }
+    .bento-col-span-1, .bento-col-span-2, .bento-col-span-3, .bento-col-span-4 {
+      grid-column: span 1 !important;
+    }
   }
 
   .skills-category {

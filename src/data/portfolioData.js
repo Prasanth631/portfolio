@@ -57,7 +57,7 @@ export const portfolioData = {
         }
     ],
 
-    // Technical Skills - Complete
+    // Technical Skills
     skills: {
         "Programming Languages": ["Java (OOPs, DSA)", "C"],
         "Database Technologies": ["MySQL", "MongoDB", "PostgreSQL"],

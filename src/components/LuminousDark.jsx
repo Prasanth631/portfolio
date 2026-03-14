@@ -258,7 +258,8 @@ const ResumeModal = ({ isOpen, onClose }) => (
                     <div className="resume-modal-header">
                         <h3 className="resume-modal-title">Resume</h3>
                         <div className="resume-modal-actions">
-                            <a
+                            <MagneticButton
+                                as="a"
                                 href={portfolioData.resumeUrl}
                                 download="Prasanth_Golla_Resume.pdf"
                                 className="btn btn-sm btn-outline"
@@ -267,8 +268,9 @@ const ResumeModal = ({ isOpen, onClose }) => (
                                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
                                 </svg>
                                 Download
-                            </a>
-                            <a
+                            </MagneticButton>
+                            <MagneticButton
+                                as="a"
                                 href={portfolioData.resumeUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
@@ -278,7 +280,7 @@ const ResumeModal = ({ isOpen, onClose }) => (
                                     <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3" />
                                 </svg>
                                 Open
-                            </a>
+                            </MagneticButton>
                             <button className="resume-close-btn" onClick={onClose}>
                                 <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                     <path d="M18 6L6 18M6 6l12 12" />
@@ -339,7 +341,8 @@ const Hero = () => {
                         </motion.div>
 
                         <motion.div className="hero-actions" variants={fadeIn}>
-                            <button
+                            <MagneticButton
+                                as="button"
                                 onClick={() => setShowResume(true)}
                                 className="btn btn-primary"
                             >
@@ -347,13 +350,13 @@ const Hero = () => {
                                     <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2z" />
                                 </svg>
                                 View Resume
-                            </button>
-                            <a href="#work" className="btn btn-outline">
+                            </MagneticButton>
+                            <MagneticButton as="a" href="#work" className="btn btn-outline">
                                 View Work
                                 <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                     <path d="M5 12h14M12 5l7 7-7 7" />
                                 </svg>
-                            </a>
+                            </MagneticButton>
                         </motion.div>
 
                         <ResumeModal isOpen={showResume} onClose={() => setShowResume(false)} />
@@ -537,44 +540,59 @@ const Projects = () => (
 );
 
 // ─── Skills Section ─────────────────────────────
-const Skills = () => (
-    <section id="skills" className="py-32">
-        <div className="container">
-            <motion.div {...slideUp} className="section-header">
-                <span className="section-label">Expertise</span>
-                <h2 className="section-title">
-                    <TextReveal>Technical Skills</TextReveal>
-                </h2>
-            </motion.div>
+const Skills = () => {
+    const getBentoClass = (idx) => {
+        switch (idx) {
+            case 0: return 'bento-col-span-2 bento-row-span-1';
+            case 1: return 'bento-col-span-1 bento-row-span-1';
+            case 2: return 'bento-col-span-1 bento-row-span-1';
+            case 3: return 'bento-col-span-2 bento-row-span-1';
+            case 4: return 'bento-col-span-2 bento-row-span-1';
+            case 5: return 'bento-col-span-2 bento-row-span-1';
+            case 6: return 'bento-col-span-2 bento-row-span-1';
+            default: return 'bento-col-span-1 bento-row-span-1';
+        }
+    };
 
-            <div className="skills-bento">
-                {Object.entries(portfolioData.skills).map(([category, items], catIdx) => (
-                    <SpotlightCard
-                        key={category}
-                        className={`skills-card ${catIdx === 0 ? 'skills-card-lg' : ''}`}
-                    >
-                        <p className="skills-category">{category}</p>
-                        <div className="skills-pills">
-                            {items.map((skill, i) => (
-                                <motion.span
-                                    key={i}
-                                    className="skill-pill"
-                                    initial={{ opacity: 0, scale: 0.8 }}
-                                    whileInView={{ opacity: 1, scale: 1 }}
-                                    viewport={{ once: true }}
-                                    transition={{ delay: i * 0.06, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                                    whileHover={{ scale: 1.08 }}
-                                >
-                                    {skill}
-                                </motion.span>
-                            ))}
-                        </div>
-                    </SpotlightCard>
-                ))}
+    return (
+        <section id="skills" className="py-32">
+            <div className="container">
+                <motion.div {...slideUp} className="section-header">
+                    <span className="section-label">Expertise</span>
+                    <h2 className="section-title">
+                        <TextReveal>Technical Skills</TextReveal>
+                    </h2>
+                </motion.div>
+
+                <div className="skills-bento">
+                    {Object.entries(portfolioData.skills).map(([category, items], catIdx) => (
+                        <SpotlightCard
+                            key={category}
+                            className={`skills-card ${getBentoClass(catIdx)}`}
+                        >
+                            <p className="skills-category">{category}</p>
+                            <div className="skills-pills">
+                                {items.map((skill, i) => (
+                                    <motion.span
+                                        key={i}
+                                        className="skill-pill"
+                                        initial={{ opacity: 0, scale: 0.8 }}
+                                        whileInView={{ opacity: 1, scale: 1 }}
+                                        viewport={{ once: true }}
+                                        transition={{ delay: i * 0.06, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                                        whileHover={{ scale: 1.08 }}
+                                    >
+                                        {skill}
+                                    </motion.span>
+                                ))}
+                            </div>
+                        </SpotlightCard>
+                    ))}
+                </div>
             </div>
-        </div>
-    </section>
-);
+        </section>
+    );
+};
 
 // ─── Certifications Section ─────────────────────
 const Certifications = () => (
