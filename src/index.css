@@ -2245,9 +2245,18 @@
     /* Nav */
     .nav {
       padding: 1rem 0;
-      background: rgba(5, 5, 5, 0.95);
+      background: var(--bg);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
+    }
+
+    .nav::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--bg);
+      opacity: 0.95;
+      z-index: -1;
     }
 
     .nav-scrolled {
@@ -2473,6 +2482,29 @@
 
     .section-title {
       font-size: 1.25rem;
+    }
+
+    /* Resume Modal */
+    .resume-overlay {
+      padding: 1rem;
+    }
+
+    .resume-modal-header {
+      padding: 1rem;
+    }
+
+    .resume-modal-title {
+      display: none; /* Hide title to make precise room for the action buttons */
+    }
+
+    .resume-modal-actions {
+      width: 100%;
+      justify-content: flex-end;
+    }
+
+    .resume-modal-actions .btn {
+      padding: 0.4rem 0.8rem !important;
+      font-size: 0.75rem !important;
     }
   }
 }
