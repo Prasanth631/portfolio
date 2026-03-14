@@ -2,11 +2,13 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, useScroll, useTransform, AnimatePresence, useInView } from 'framer-motion';
 import Flashlight from './Flashlight';
 import Marquee from './Marquee';
+import LoadingScreen from './LoadingScreen';
 import SpotlightCard from './SpotlightCard';
 import TiltCard from './TiltCard';
 import MagneticButton from './MagneticButton';
 import TextReveal from './TextReveal';
 import AnimatedCounter from './AnimatedCounter';
+import HeroCodeWindow from './HeroCodeWindow';
 import { portfolioData } from '../data/portfolioData';
 
 // ─── Animation Variants ────────────────────────
@@ -301,71 +303,67 @@ const ResumeModal = ({ isOpen, onClose }) => (
 // ─── Hero Section ───────────────────────────────
 const Hero = () => {
     const [showResume, setShowResume] = useState(false);
-    const typedText = useTypingEffect(
-        ['Software Engineer', 'Full-Stack Developer', 'Problem Solver'],
-        80,
-        2500
-    );
 
     return (
         <section className="section hero-section">
             <GradientOrbs />
             <div className="container hero-container">
-                <motion.div variants={stagger} initial="initial" animate="animate">
-                    <motion.div className="hero-badge" variants={fadeIn}>
-                        <span className="hero-badge-dot" />
-                        Open to opportunities
+                <div className="hero-grid">
+                    <motion.div variants={stagger} initial="initial" animate="animate">
+                        <motion.div className="hero-badge" variants={fadeIn}>
+                            <span className="hero-badge-dot" />
+                            Open to opportunities
+                        </motion.div>
+
+                        <motion.h1 className="hero-name" variants={fadeIn}>
+                            {portfolioData.name}
+                        </motion.h1>
+
+                        <motion.p className="hero-description" variants={fadeIn}>
+                            {portfolioData.objective}
+                        </motion.p>
+
+                        {/* Stats Bar */}
+                        <motion.div className="hero-stats" variants={fadeIn}>
+                            {portfolioData.stats.map((stat, i) => (
+                                <div key={i} className="hero-stat">
+                                    <AnimatedCounter
+                                        target={stat.value}
+                                        suffix={stat.suffix}
+                                        className="hero-stat-value"
+                                        duration={1.5}
+                                    />
+                                    <span className="hero-stat-label">{stat.label}</span>
+                                </div>
+                            ))}
+                        </motion.div>
+
+                        <motion.div className="hero-actions" variants={fadeIn}>
+                            <button
+                                onClick={() => setShowResume(true)}
+                                className="btn btn-primary"
+                            >
+                                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                    <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2z" />
+                                </svg>
+                                View Resume
+                            </button>
+                            <a href="#work" className="btn btn-outline">
+                                View Work
+                                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                    <path d="M5 12h14M12 5l7 7-7 7" />
+                                </svg>
+                            </a>
+                        </motion.div>
+
+                        <ResumeModal isOpen={showResume} onClose={() => setShowResume(false)} />
                     </motion.div>
 
-                    <motion.h1 className="hero-name" variants={fadeIn}>
-                        {portfolioData.name}
-                    </motion.h1>
-
-                    <motion.div className="hero-typed" variants={fadeIn}>
-                        <span className="hero-typed-prefix">I'm a </span>
-                        <span className="hero-typed-text">{typedText}</span>
-                        <span className="hero-cursor">|</span>
+                    {/* Right side: Code Window */}
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}>
+                        <HeroCodeWindow />
                     </motion.div>
-
-                    <motion.p className="hero-description" variants={fadeIn}>
-                        {portfolioData.objective}
-                    </motion.p>
-
-                    {/* Stats Bar */}
-                    <motion.div className="hero-stats" variants={fadeIn}>
-                        {portfolioData.stats.map((stat, i) => (
-                            <div key={i} className="hero-stat">
-                                <AnimatedCounter
-                                    target={stat.value}
-                                    suffix={stat.suffix}
-                                    className="hero-stat-value"
-                                    duration={1.5}
-                                />
-                                <span className="hero-stat-label">{stat.label}</span>
-                            </div>
-                        ))}
-                    </motion.div>
-
-                    <motion.div className="hero-actions" variants={fadeIn}>
-                        <button
-                            onClick={() => setShowResume(true)}
-                            className="btn btn-primary"
-                        >
-                            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                                <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2z" />
-                            </svg>
-                            View Resume
-                        </button>
-                        <a href="#work" className="btn btn-outline">
-                            View Work
-                            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                                <path d="M5 12h14M12 5l7 7-7 7" />
-                            </svg>
-                        </a>
-                    </motion.div>
-
-                    <ResumeModal isOpen={showResume} onClose={() => setShowResume(false)} />
-                </motion.div>
+                </div>
             </div>
 
             {/* Scroll Indicator */}
@@ -863,22 +861,35 @@ const Footer = () => {
 };
 
 // ─── Main Component ─────────────────────────────
-const LuminousDark = () => (
-    <div className="min-h-screen relative">
-        <div className="noise-overlay" />
-        <Flashlight />
-        <Nav />
-        <main>
-            <Hero />
-            <Marquee />
-            <About />
-            <Projects />
-            <Skills />
-            <Certifications />
-            <Contact />
-        </main>
-        <Footer />
-    </div>
-);
+const LuminousDark = () => {
+    const [isLoading, setIsLoading] = useState(() => {
+        // Only show loader once per session
+        return !sessionStorage.getItem('intro-seen');
+    });
+
+    const handleLoadComplete = () => {
+        sessionStorage.setItem('intro-seen', '1');
+        setIsLoading(false);
+    };
+
+    return (
+        <div className="min-h-screen relative">
+            {isLoading && <LoadingScreen onComplete={handleLoadComplete} />}
+            <div className="noise-overlay" />
+            <Flashlight />
+            <Nav />
+            <main>
+                <Hero />
+                <Marquee />
+                <About />
+                <Projects />
+                <Skills />
+                <Certifications />
+                <Contact />
+            </main>
+            <Footer />
+        </div>
+    );
+};
 
 export default LuminousDark;
